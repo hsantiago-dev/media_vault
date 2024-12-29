@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:media_vault/data/repositories/workspace.repository.dart';
 import 'package:media_vault/routing/router.dart';
 import 'package:media_vault/ui/@core/themes/theme.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    Provider(
+      create: (context) => WorkspaceRepository(),
+      child: const App(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
