@@ -6,6 +6,10 @@ abstract final class AppColors {
   static const grey1 = Color(0xFFF2F2F2);
   static const grey2 = Color(0xFF4D4D4D);
   static const grey3 = Color(0xFFA4A4A4);
+  static const teal1 = Color(0xFF0CE0C0);
+  static const green1 = Color(0xFF4AFA96);
+  static const blue1 = Color(0xFF00c4ff);
+  static const yellow1 = Color(0xFFfee181);
   static const whiteTransparent = Color(0x4DFFFFFF);
   static const blackTransparent = Color(0x4D000000);
   static const red1 = Color(0xFFE74C3C);

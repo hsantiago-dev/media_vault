@@ -74,8 +74,12 @@ class ValveViewModel extends ChangeNotifier {
   Future<Result<void>> _pickWorkspace() async {
     try {
       final directoryPath = await _pickDirectory();
+      // final directoryPath = 'D:\CURSINHO';
       if (directoryPath == null) {
-        return Result.error(Exception("Diretório inválido."));
+        _selectedDirectoryNode = null;
+        _directoryStack.clear();
+        _workspace = null;
+        return Result.ok(null);
       }
 
       final directory = Directory(directoryPath);
@@ -84,6 +88,7 @@ class ValveViewModel extends ChangeNotifier {
       }
 
       final directoryNode = _convertDirectoryToNode(directory);
+      updatePercentageConcluded(directoryNode);
       final result = await _workspaceRepository.saveWorkspace(directoryNode);
 
       switch (result) {
@@ -114,19 +119,49 @@ class ValveViewModel extends ChangeNotifier {
 
     // Iterar sobre os itens do diretório.
     final List<FileSystemEntity> entities = directory.listSync();
+    bool isWatched = false;
     for (final entity in entities) {
       if (entity is Directory) {
         // Recursivamente adicionar subdiretórios.
         node.addChild(_convertDirectoryToNode(entity));
       } else if (entity is File) {
         // Adicionar arquivos diretamente.
-        node.addChild(FileNode(
-          entity.path.split(Platform.pathSeparator).last,
-          entity.path,
-        ));
+        node.addChild(FileNode(entity.path.split(Platform.pathSeparator).last,
+            entity.path, isWatched));
+        isWatched = !isWatched;
       }
     }
 
     return node;
+  }
+
+  void updatePercentageConcluded(DirectoryNode directoryNode) {
+    // Função interna para calcular a proporção de arquivos marcados
+    int calculateAndSet(DirectoryNode dir) {
+      int totalFiles = 0;
+      int checkedFiles = 0;
+
+      for (var child in dir.children) {
+        if (child is FileNode) {
+          totalFiles++;
+          if (child.isChecked) {
+            checkedFiles++;
+          }
+        } else if (child is DirectoryNode) {
+          // Processa recursivamente e acumula
+          int subFiles = calculateAndSet(child);
+          totalFiles += subFiles;
+          checkedFiles += (subFiles * child.percentageConcluded).toInt();
+        }
+      }
+
+      // Evita divisão por zero e atualiza o atributo
+      dir.percentageConcluded =
+          totalFiles == 0 ? 0.0 : (checkedFiles / totalFiles);
+      return totalFiles;
+    }
+
+    // Chama a função para o diretório inicial
+    calculateAndSet(directoryNode);
   }
 }

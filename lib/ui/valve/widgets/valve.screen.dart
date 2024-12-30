@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
+import 'package:media_vault/ui/@core/themes/colors.dart';
 import 'package:media_vault/ui/valve/view_models/valve.viewmodel.dart';
 
 class ValveScreen extends StatefulWidget {
@@ -16,28 +17,16 @@ class _ValveScreenState extends State<ValveScreen> {
     return Row(
       children: [
         for (var i = 0; i < widget.viewModel.directoryStack.length; i++)
-          if (widget.viewModel.directoryStack[i] ==
-              widget.viewModel.directoryStack.lastOrNull)
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Icon(Icons.chevron_right_rounded),
-                ),
-                Text(widget.viewModel.directoryStack[i].name),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Icon(Icons.chevron_right_rounded),
-                TextButton(
-                  onPressed: () => widget.viewModel.rollbackDirectoryNode
-                      .execute(widget.viewModel.directoryStack[i]),
-                  child: Text(widget.viewModel.directoryStack[i].name),
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              Icon(Icons.chevron_right_rounded),
+              TextButton(
+                onPressed: () => widget.viewModel.rollbackDirectoryNode
+                    .execute(widget.viewModel.directoryStack[i]),
+                child: Text(widget.viewModel.directoryStack[i].name),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -56,49 +45,47 @@ class _ValveScreenState extends State<ValveScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
+                    spacing: 30,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.home_rounded, size: 30),
-                        onPressed: () => widget.viewModel.rollbackDirectoryNode
+                      InkWell(
+                        onTap: () => widget.viewModel.rollbackDirectoryNode
                             .execute(null),
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 50,
+                        ),
                       ),
                       _breadcumbDirectoryStack(),
                     ],
                   ),
-                  ElevatedButton(
-                    onPressed: widget.viewModel.pickWorkspace.execute,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                  InkWell(
+                    onTap: widget.viewModel.pickWorkspace.execute,
+                    child: Container(
+                      height: 50,
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: AppColors.grey2,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        spacing: 10,
+                        children: [
+                          Text(widget.viewModel.workspace?.name ??
+                              'Selecionar Workspace'),
+                          Icon(
+                            Icons.expand_more_rounded,
+                            size: 30,
+                          ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Text(widget.viewModel.workspace?.name ??
-                            'Selecionar Workspace'),
-                        Icon(
-                          Icons.expand_more_rounded,
-                          size: 30,
-                        ),
-                      ],
-                    ),
-                  ),
+                  )
                 ],
               );
             },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton(
-                  onPressed: widget.viewModel.pickWorkspace.execute,
-                  child: Text(widget.viewModel.workspace?.name ??
-                      'Selecionar Workspace'),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -106,6 +93,7 @@ class _ValveScreenState extends State<ValveScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 30,
           children: [
             Container(
               width: 50,
@@ -130,7 +118,23 @@ class _ValveScreenState extends State<ValveScreen> {
                   listenable: widget.viewModel,
                   builder: (context, _) {
                     if (widget.viewModel.workspace == null) {
-                      return Text('Sem diretório');
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sentiment_very_satisfied_rounded,
+                            size: 85,
+                            color: AppColors.grey2,
+                          ),
+                          Text(
+                            'Selecione um diretório para começar.',
+                            style: TextStyle(
+                              color: AppColors.grey2,
+                              fontSize: 24,
+                            ),
+                          ),
+                        ],
+                      );
                     }
 
                     return SingleChildScrollView(
@@ -143,12 +147,33 @@ class _ValveScreenState extends State<ValveScreen> {
                               .map((child) {
                             if (child is FileNode) {
                               return ListTile(
-                                title: Text("Arquivo: ${child.name}"),
-                                subtitle: Text("Caminho: ${child.path}"),
-                                leading: Icon(Icons.insert_drive_file),
+                                key: ValueKey(child.name),
+                                title: Text(child.name),
+                                subtitle: Text(
+                                  child.path,
+                                  style: TextStyle(
+                                    color: AppColors.grey3,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                leading: Icon(
+                                  Icons.play_circle_rounded,
+                                  size: 50,
+                                ),
+                                trailing: (child.isChecked)
+                                    ? Icon(
+                                        Icons.task_alt_rounded,
+                                        size: 50,
+                                        color: AppColors.green1,
+                                      )
+                                    : Icon(
+                                        Icons.radio_button_off_rounded,
+                                        size: 50,
+                                      ),
                               );
                             } else if (child is DirectoryNode) {
                               return ListTile(
+                                key: ValueKey(child.name),
                                 title: Text(child.name),
                                 leading: Icon(
                                   Icons.perm_media_rounded,
@@ -163,7 +188,7 @@ class _ValveScreenState extends State<ValveScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                 ),
                                 trailing: CircularCompletionIndicator(
-                                  percentage: 0.5,
+                                  percentage: child.percentageConcluded,
                                   size: 50,
                                   backgroundColor: Colors.grey[700],
                                 ),
@@ -187,16 +212,24 @@ class _ValveScreenState extends State<ValveScreen> {
 class CircularCompletionIndicator extends StatelessWidget {
   final double percentage;
   final double size;
-  final Color color;
   final Color? backgroundColor;
 
   const CircularCompletionIndicator({
     super.key,
     required this.percentage,
     this.size = 100.0,
-    this.color = Colors.teal,
     this.backgroundColor = Colors.grey,
   });
+
+  Color getColor(double percentage) {
+    if (percentage < 0.5) {
+      return AppColors.yellow1;
+    } else if (percentage < 0.8) {
+      return AppColors.blue1;
+    } else {
+      return AppColors.green1;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,12 +241,12 @@ class CircularCompletionIndicator extends StatelessWidget {
         children: [
           CircularProgressIndicator(
             value: percentage,
-            strokeWidth: 6,
-            color: color,
+            strokeWidth: 4,
+            color: getColor(percentage),
             backgroundColor: backgroundColor,
           ),
           Text(
-            '${(percentage * 100).toInt()}%',
+            '${(percentage * 100).toInt()}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: size * 0.2,
