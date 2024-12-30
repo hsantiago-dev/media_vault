@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/ui/@core/themes/colors.dart';
 import 'package:media_vault/ui/valve/view_models/valve.viewmodel.dart';
+import 'package:media_vault/ui/valve/widgets/dialog-video.widget.dart';
 
 class ValveScreen extends StatefulWidget {
   const ValveScreen({super.key, required this.viewModel});
@@ -28,6 +29,17 @@ class _ValveScreenState extends State<ValveScreen> {
             ],
           ),
       ],
+    );
+  }
+
+  void showVideoModal(BuildContext context, String videoPath) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DialogVideoWidget(
+          videoPath: videoPath,
+        );
+      },
     );
   }
 
@@ -139,6 +151,7 @@ class _ValveScreenState extends State<ValveScreen> {
 
                     return SingleChildScrollView(
                       child: Column(
+                        spacing: 10,
                         children: [
                           ...((widget.viewModel.selectedDirectoryNode == null)
                                   ? widget.viewModel.workspace!
@@ -148,6 +161,14 @@ class _ValveScreenState extends State<ValveScreen> {
                             if (child is FileNode) {
                               return ListTile(
                                 key: ValueKey(child.name),
+                                leading: Icon(
+                                  Icons.play_circle_rounded,
+                                  size: 40,
+                                ),
+                                titleTextStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 title: Text(child.name),
                                 subtitle: Text(
                                   child.path,
@@ -156,30 +177,36 @@ class _ValveScreenState extends State<ValveScreen> {
                                     fontSize: 12,
                                   ),
                                 ),
-                                leading: Icon(
-                                  Icons.play_circle_rounded,
-                                  size: 50,
+                                minTileHeight: 80,
+                                onTap: () =>
+                                    showVideoModal(context, child.path),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
                                 trailing: (child.isChecked)
                                     ? Icon(
                                         Icons.task_alt_rounded,
-                                        size: 50,
+                                        size: 40,
                                         color: AppColors.green1,
                                       )
                                     : Icon(
                                         Icons.radio_button_off_rounded,
-                                        size: 50,
+                                        size: 40,
                                       ),
                               );
                             } else if (child is DirectoryNode) {
                               return ListTile(
                                 key: ValueKey(child.name),
-                                title: Text(child.name),
                                 leading: Icon(
-                                  Icons.perm_media_rounded,
-                                  size: 50,
+                                  Icons.folder_rounded,
+                                  size: 30,
                                   color: Colors.grey[600],
                                 ),
+                                titleTextStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                title: Text(child.name),
                                 minTileHeight: 80,
                                 onTap: () => widget
                                     .viewModel.selectDirectoryNode
@@ -189,7 +216,7 @@ class _ValveScreenState extends State<ValveScreen> {
                                 ),
                                 trailing: CircularCompletionIndicator(
                                   percentage: child.percentageConcluded,
-                                  size: 50,
+                                  size: 40,
                                   backgroundColor: Colors.grey[700],
                                 ),
                               );
