@@ -3,8 +3,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class DialogVideoWidget extends StatefulWidget {
-  const DialogVideoWidget({super.key, required this.videoPath});
+  const DialogVideoWidget(
+      {super.key, required this.title, required this.videoPath});
 
+  final String title;
   final String videoPath;
 
   @override
@@ -13,7 +15,7 @@ class DialogVideoWidget extends StatefulWidget {
 
 class _DialogVideoWidgetState extends State<DialogVideoWidget> {
   // Create a [Player] to control playback.
-  late final player = Player();
+  late final player = Player(configuration: PlayerConfiguration(muted: true));
   // Create a [VideoController] to handle video output from [Player].
   late final controller = VideoController(player);
 
@@ -33,12 +35,48 @@ class _DialogVideoWidgetState extends State<DialogVideoWidget> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.width * 9.0 / 16.0,
-          // Use [Video] widget to display video output.
-          child: Video(controller: controller),
+          width: MediaQuery.of(context).size.width * (4 / 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 20,
+            children: [
+              Text(
+                widget.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              Expanded(child: Video(controller: controller)),
+              SizedBox(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: Row(
+                      // spacing: 20,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 20),
+                          child: Icon(
+                            Icons.radio_button_off_rounded,
+                            size: 40,
+                          ),
+                        ),
+                        Text('Marcar como realizado'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

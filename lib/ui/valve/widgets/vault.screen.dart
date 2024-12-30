@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/ui/@core/themes/colors.dart';
-import 'package:media_vault/ui/valve/view_models/valve.viewmodel.dart';
+import 'package:media_vault/ui/valve/view_models/vault.viewmodel.dart';
 import 'package:media_vault/ui/valve/widgets/dialog-video.widget.dart';
 
-class ValveScreen extends StatefulWidget {
-  const ValveScreen({super.key, required this.viewModel});
+class VaultScreen extends StatefulWidget {
+  const VaultScreen({super.key, required this.viewModel});
 
-  final ValveViewModel viewModel;
+  final VaultViewModel viewModel;
 
   @override
-  State<ValveScreen> createState() => _ValveScreenState();
+  State<VaultScreen> createState() => _VaultScreenState();
 }
 
-class _ValveScreenState extends State<ValveScreen> {
+class _VaultScreenState extends State<VaultScreen> {
   Widget _breadcumbDirectoryStack() {
     return Row(
       children: [
@@ -32,11 +32,13 @@ class _ValveScreenState extends State<ValveScreen> {
     );
   }
 
-  void showVideoModal(BuildContext context, String videoPath) {
+  void showVideoModal(
+      BuildContext context, String videoName, String videoPath) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return DialogVideoWidget(
+          title: videoName,
           videoPath: videoPath,
         );
       },
@@ -178,8 +180,8 @@ class _ValveScreenState extends State<ValveScreen> {
                                   ),
                                 ),
                                 minTileHeight: 80,
-                                onTap: () =>
-                                    showVideoModal(context, child.path),
+                                onTap: () => showVideoModal(
+                                    context, child.name, child.path),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(15),
                                 ),

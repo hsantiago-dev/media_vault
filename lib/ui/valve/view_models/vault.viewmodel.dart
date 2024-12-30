@@ -7,13 +7,13 @@ import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/util/command.dart';
 import 'package:media_vault/util/result.dart';
 
-class ValveViewModel extends ChangeNotifier {
+class VaultViewModel extends ChangeNotifier {
   late Command0 pickWorkspace;
   late Command1 selectDirectoryNode;
   late Command1 rollbackDirectoryNode;
   final WorkspaceRepository _workspaceRepository;
 
-  ValveViewModel({
+  VaultViewModel({
     required WorkspaceRepository workspaceRepository,
   }) : _workspaceRepository = workspaceRepository {
     pickWorkspace = Command0(_pickWorkspace);
