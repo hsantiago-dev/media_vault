@@ -4,8 +4,11 @@ import 'package:media_vault/data/repositories/workspace.repository.dart';
 import 'package:media_vault/routing/router.dart';
 import 'package:media_vault/ui/@core/themes/theme.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
   MediaKit.ensureInitialized();
   runApp(
     Provider(

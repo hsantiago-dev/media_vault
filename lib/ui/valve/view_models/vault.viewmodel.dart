@@ -1,14 +1,14 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:media_vault/data/repositories/workspace.repository.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
+import 'package:media_vault/domain/models/workspace.model.dart';
 import 'package:media_vault/util/command.dart';
 import 'package:media_vault/util/result.dart';
 
 class VaultViewModel extends ChangeNotifier {
-  late Command0 pickWorkspace;
+  late Command0 saveNewWorkspace;
+  late Command1 selectWorkspace;
   late Command1 selectDirectoryNode;
   late Command1 rollbackDirectoryNode;
   final WorkspaceRepository _workspaceRepository;
@@ -16,7 +16,11 @@ class VaultViewModel extends ChangeNotifier {
   VaultViewModel({
     required WorkspaceRepository workspaceRepository,
   }) : _workspaceRepository = workspaceRepository {
-    pickWorkspace = Command0(_pickWorkspace);
+    saveNewWorkspace = Command0(_saveNewWorkspace);
+    selectWorkspace = Command1((id) async {
+      final result = await _selectWorkspace(id);
+      return result;
+    });
     selectDirectoryNode = Command1((directoryNode) async {
       final result = await _selectDirectoryNode(directoryNode);
       return result;
@@ -25,16 +29,62 @@ class VaultViewModel extends ChangeNotifier {
       final result = await _rollbackDirectoryNode(directoryNode);
       return result;
     });
+
+    _getWorkspaces();
   }
 
-  DirectoryNode? _workspace;
-  DirectoryNode? get workspace => _workspace;
+  Workspace? _workspace;
+  Workspace? get workspace => _workspace;
+
+  List<Workspace> _workspaces = [];
+  List<Workspace> get workspaces => _workspaces;
 
   DirectoryNode? _selectedDirectoryNode;
   DirectoryNode? get selectedDirectoryNode => _selectedDirectoryNode;
 
   final List<DirectoryNode> _directoryStack = [];
   List<DirectoryNode> get directoryStack => _directoryStack;
+
+  Future<Result<void>> _getWorkspaces() async {
+    try {
+      final result = await _workspaceRepository.getWorkspaces();
+      switch (result) {
+        case Ok<List<Workspace>>():
+          _workspaces = result.value;
+          break;
+        case Error():
+          return result;
+      }
+
+      return result;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<Result<void>> _selectWorkspace(int id) async {
+    final result = await _workspaceRepository.getWorkspace(id);
+    return _pickWorkspace(result);
+  }
+
+  Future<Result<void>> _saveNewWorkspace() async {
+    final directoryPath = await _pickDirectory();
+    // final directoryPath = 'D:\CURSINHO';
+    if (directoryPath == null) {
+      _selectedDirectoryNode = null;
+      _directoryStack.clear();
+      _workspace = null;
+      return Result.ok(null);
+    }
+
+    final name = directoryPath.split('\\').last;
+
+    final workspace = Workspace.newWorkspace(name: name, path: directoryPath);
+    final result = await _workspaceRepository.saveWorkspace(workspace);
+
+    _getWorkspaces();
+    return _pickWorkspace(result);
+  }
 
   Future<Result<void>> _rollbackDirectoryNode(
       DirectoryNode? directoryNode) async {
@@ -71,33 +121,15 @@ class VaultViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Result<void>> _pickWorkspace() async {
+  Future<Result<void>> _pickWorkspace(Result<Workspace> result) async {
     try {
-      final directoryPath = await _pickDirectory();
-      // final directoryPath = 'D:\CURSINHO';
-      if (directoryPath == null) {
-        _selectedDirectoryNode = null;
-        _directoryStack.clear();
-        _workspace = null;
-        return Result.ok(null);
-      }
-
-      final directory = Directory(directoryPath);
-      if (!directory.existsSync()) {
-        return Result.error(Exception("Diretório inválido."));
-      }
-
-      final directoryNode = _convertDirectoryToNode(directory);
-      updatePercentageConcluded(directoryNode);
-      final result = await _workspaceRepository.saveWorkspace(directoryNode);
-
       switch (result) {
-        case Ok<void>():
+        case Ok<Workspace>():
           _selectedDirectoryNode = null;
           _directoryStack.clear();
-          _workspace = directoryNode;
+          _workspace = result.value;
           break;
-        case Error<void>():
+        case Error():
           return result;
       }
 
@@ -110,58 +142,5 @@ class VaultViewModel extends ChangeNotifier {
   Future<String?> _pickDirectory() async {
     String? directoryPath = await FilePicker.platform.getDirectoryPath();
     return directoryPath;
-  }
-
-  DirectoryNode _convertDirectoryToNode(Directory directory) {
-    // Criar o nó raiz para o diretório atual.
-    final DirectoryNode node =
-        DirectoryNode(directory.path.split(Platform.pathSeparator).last);
-
-    // Iterar sobre os itens do diretório.
-    final List<FileSystemEntity> entities = directory.listSync();
-    bool isWatched = false;
-    for (final entity in entities) {
-      if (entity is Directory) {
-        // Recursivamente adicionar subdiretórios.
-        node.addChild(_convertDirectoryToNode(entity));
-      } else if (entity is File) {
-        // Adicionar arquivos diretamente.
-        node.addChild(FileNode(entity.path.split(Platform.pathSeparator).last,
-            entity.path, isWatched));
-        isWatched = !isWatched;
-      }
-    }
-
-    return node;
-  }
-
-  void updatePercentageConcluded(DirectoryNode directoryNode) {
-    // Função interna para calcular a proporção de arquivos marcados
-    int calculateAndSet(DirectoryNode dir) {
-      int totalFiles = 0;
-      int checkedFiles = 0;
-
-      for (var child in dir.children) {
-        if (child is FileNode) {
-          totalFiles++;
-          if (child.isChecked) {
-            checkedFiles++;
-          }
-        } else if (child is DirectoryNode) {
-          // Processa recursivamente e acumula
-          int subFiles = calculateAndSet(child);
-          totalFiles += subFiles;
-          checkedFiles += (subFiles * child.percentageConcluded).toInt();
-        }
-      }
-
-      // Evita divisão por zero e atualiza o atributo
-      dir.percentageConcluded =
-          totalFiles == 0 ? 0.0 : (checkedFiles / totalFiles);
-      return totalFiles;
-    }
-
-    // Chama a função para o diretório inicial
-    calculateAndSet(directoryNode);
   }
 }

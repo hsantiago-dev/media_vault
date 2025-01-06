@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
+import 'package:media_vault/domain/models/workspace.model.dart';
 import 'package:media_vault/ui/@core/themes/colors.dart';
 import 'package:media_vault/ui/valve/view_models/vault.viewmodel.dart';
 import 'package:media_vault/ui/valve/widgets/dialog-video.widget.dart';
+import 'package:popover/popover.dart';
 
 class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key, required this.viewModel});
@@ -72,31 +74,14 @@ class _VaultScreenState extends State<VaultScreen> {
                       _breadcumbDirectoryStack(),
                     ],
                   ),
-                  InkWell(
-                    onTap: widget.viewModel.pickWorkspace.execute,
-                    child: Container(
-                      height: 50,
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: AppColors.grey2,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 10,
-                        children: [
-                          Text(widget.viewModel.workspace?.name ??
-                              'Selecionar Workspace'),
-                          Icon(
-                            Icons.expand_more_rounded,
-                            size: 30,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
+                  PopoverWorkspace(
+                    workspace: widget.viewModel.workspace,
+                    workspaces: widget.viewModel.workspaces,
+                    onSelectWorkspace: (int id) => {
+                      widget.viewModel.selectWorkspace.execute(id),
+                    },
+                    saveNewWorkspace: widget.viewModel.saveNewWorkspace.execute,
+                  ),
                 ],
               );
             },
@@ -156,7 +141,7 @@ class _VaultScreenState extends State<VaultScreen> {
                         spacing: 10,
                         children: [
                           ...((widget.viewModel.selectedDirectoryNode == null)
-                                  ? widget.viewModel.workspace!
+                                  ? widget.viewModel.workspace!.workspaceNode!
                                   : widget.viewModel.selectedDirectoryNode!)
                               .children
                               .map((child) {
@@ -234,6 +219,128 @@ class _VaultScreenState extends State<VaultScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class PopoverWorkspace extends StatelessWidget {
+  const PopoverWorkspace({
+    super.key,
+    required this.workspace,
+    required this.workspaces,
+    required this.onSelectWorkspace,
+    required this.saveNewWorkspace,
+  });
+
+  final Workspace? workspace;
+  final List<Workspace> workspaces;
+  final Function(int) onSelectWorkspace;
+  final Function() saveNewWorkspace;
+
+  double calculateDxOffset(BuildContext context, double popoverWidth) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return screenWidth - popoverWidth - 20;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: Container(
+        height: 50,
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: AppColors.grey2,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 10,
+          children: [
+            Image.asset(
+              'assets/planet.png',
+              width: 30,
+            ),
+            Text(workspace?.name ?? 'Selecionar Workspace'),
+            Icon(
+              Icons.expand_more_rounded,
+              size: 30,
+            ),
+          ],
+        ),
+      ),
+      onTap: () {
+        showPopover(
+          context: context,
+          backgroundColor: AppColors.blackTransparent,
+          bodyBuilder: (context) {
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 5,
+                      bottom: 10,
+                      left: 10,
+                      right: 10,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        saveNewWorkspace();
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.teal1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Row(
+                        spacing: 10,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_rounded),
+                          Text(
+                            'Adicionar workspace',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.white1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ...workspaces.map((workspace) {
+                    return ListTile(
+                      leading: Image.asset(
+                        'assets/planet.png',
+                        width: 30,
+                      ),
+                      title: Text(workspace.name),
+                      subtitle: Text(workspace.path),
+                      subtitleTextStyle: TextStyle(
+                        color: AppColors.grey3,
+                        fontSize: 14,
+                      ),
+                      onTap: () {
+                        onSelectWorkspace(workspace.id);
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  }),
+                ],
+              ),
+            );
+          },
+          direction: PopoverDirection.bottom,
+          width: 340,
+          arrowHeight: 15,
+          arrowWidth: 0,
+        );
+      },
     );
   }
 }
