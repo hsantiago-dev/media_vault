@@ -1,4 +1,3 @@
-// Classe base para representar um nó no sistema de arquivos.
 abstract class FileSystemNode {
   final String name;
   final String type;
@@ -6,18 +5,37 @@ abstract class FileSystemNode {
   FileSystemNode(this.name, this.type);
 }
 
-// Classe para representar um arquivo.
 class FileNode extends FileSystemNode {
+  final int? id;
+  @override
+  final String name;
   final String path;
-  final bool isChecked;
+  final int workspaceId;
+  final int? points;
+  final String? completionDate;
 
-  FileNode(String name, this.path, this.isChecked) : super(name, "file");
+  FileNode({
+    this.id,
+    required this.name,
+    required this.path,
+    required this.workspaceId,
+    this.points,
+    this.completionDate,
+  }) : super(name, "file");
+
+  factory FileNode.newFile(
+      {required String name, required String path, required int workspaceId}) {
+    return FileNode(
+      name: name,
+      path: path,
+      workspaceId: workspaceId,
+    );
+  }
 
   @override
   String toString() => 'FileNode(name: $name, path: $path)';
 }
 
-// Classe para representar um diretório.
 class DirectoryNode extends FileSystemNode {
   double percentageConcluded = 0.0;
   final List<FileSystemNode> children;

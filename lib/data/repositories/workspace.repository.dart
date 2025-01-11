@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:media_vault/data/repositories/file.repository.dart';
 import 'package:media_vault/data/services/sqlite.service.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/domain/models/workspace.model.dart';
@@ -7,17 +8,24 @@ import 'package:media_vault/util/result.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class WorkspaceRepository {
+  late final FileRepository _fileRepository;
+  WorkspaceRepository(FileRepository fileRepository) {
+    _fileRepository = fileRepository;
+  }
+
   Future<Result<Workspace>> getWorkspace(int id) async {
     final db = await SqliteService.instance.database;
 
-    return await db
-        .query('Workspace', where: 'id = ?', whereArgs: [id]).then((value) {
+    return await db.query('Workspace', where: 'id = ?', whereArgs: [id]).then(
+        (value) async {
       if (value.isEmpty) {
         return Result.error(Exception("Workspace não encontrado."));
       }
 
-      final workspaceNode =
-          getWorkspaceSystemNode(value.first['path'] as String);
+      final workspaceNode = await getWorkspaceSystemNode(
+        path: value.first['path'] as String,
+        workspaceId: value.first['id'] as int,
+      );
 
       return Result.ok(
         Workspace(
@@ -46,9 +54,8 @@ class WorkspaceRepository {
   }
 
   Future<Result<Workspace>> saveWorkspace(Workspace workspace) async {
-    final workspaceNode = getWorkspaceSystemNode(workspace.path);
-
-    if (workspaceNode == null) {
+    final directory = Directory(workspace.path);
+    if (!directory.existsSync()) {
       return Future.value(
           Result<Workspace>.error(Exception("Diretório inválido.")));
     }
@@ -66,6 +73,9 @@ class WorkspaceRepository {
           Result<Workspace>.error(Exception("Erro ao salvar workspace.")));
     }
 
+    final workspaceNode =
+        await getWorkspaceSystemNode(path: workspace.path, workspaceId: id);
+
     return Future.value(
       Result.ok(
         Workspace(
@@ -78,31 +88,52 @@ class WorkspaceRepository {
     );
   }
 
-  DirectoryNode? getWorkspaceSystemNode(String path) {
+  Future<DirectoryNode?> getWorkspaceSystemNode(
+      {required String path, required int workspaceId}) async {
     final directory = Directory(path);
     if (!directory.existsSync()) {
       return null;
     }
 
-    final directoryNode = _convertDirectoryToNode(directory);
+    final directoryNode = await _syncronizeFileSystemNode(
+        directory: directory, workspaceId: workspaceId);
     _updatePercentageConcluded(directoryNode);
 
     return directoryNode;
   }
 
-  DirectoryNode _convertDirectoryToNode(Directory directory) {
+  Future<DirectoryNode> _syncronizeFileSystemNode(
+      {required Directory directory, required int workspaceId}) async {
     final DirectoryNode node =
         DirectoryNode(directory.path.split(Platform.pathSeparator).last);
 
     final List<FileSystemEntity> entities = directory.listSync();
-    bool isWatched = false;
     for (final entity in entities) {
       if (entity is Directory) {
-        node.addChild(_convertDirectoryToNode(entity));
+        node.addChild(await _syncronizeFileSystemNode(
+            directory: entity, workspaceId: workspaceId));
       } else if (entity is File) {
-        node.addChild(FileNode(entity.path.split(Platform.pathSeparator).last,
-            entity.path, isWatched));
-        isWatched = !isWatched;
+        Result<FileNode?> result = await _fileRepository.getFile(entity.path);
+        FileNode? file;
+
+        switch (result) {
+          case Ok<FileNode?>():
+            if (result.value != null) {
+              file = result.value;
+            }
+            break;
+          case Error():
+            throw result.error;
+        }
+
+        node.addChild(
+          file ??
+              FileNode.newFile(
+                name: entity.path.split(Platform.pathSeparator).last,
+                path: entity.path,
+                workspaceId: workspaceId,
+              ),
+        );
       }
     }
 
@@ -117,7 +148,7 @@ class WorkspaceRepository {
       for (var child in dir.children) {
         if (child is FileNode) {
           totalFiles++;
-          if (child.isChecked) {
+          if (child.completionDate != null) {
             checkedFiles++;
           }
         } else if (child is DirectoryNode) {

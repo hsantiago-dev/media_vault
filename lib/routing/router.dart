@@ -20,8 +20,10 @@ GoRouter router() => GoRouter(
         GoRoute(
           path: Routes.valve,
           builder: (context, state) {
-            final viewModel =
-                VaultViewModel(workspaceRepository: context.read());
+            final viewModel = VaultViewModel(
+              workspaceRepository: context.read(),
+              fileRepository: context.read(),
+            );
             return VaultScreen(viewModel: viewModel);
           },
         ),

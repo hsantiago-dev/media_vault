@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:media_vault/data/repositories/file.repository.dart';
 import 'package:media_vault/data/repositories/workspace.repository.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/domain/models/workspace.model.dart';
@@ -11,11 +12,16 @@ class VaultViewModel extends ChangeNotifier {
   late Command1 selectWorkspace;
   late Command1 selectDirectoryNode;
   late Command1 rollbackDirectoryNode;
+  late Command1 completeFile;
+  late Command1 uncompleteFile;
   final WorkspaceRepository _workspaceRepository;
+  final FileRepository _fileRepository;
 
   VaultViewModel({
     required WorkspaceRepository workspaceRepository,
-  }) : _workspaceRepository = workspaceRepository {
+    required FileRepository fileRepository,
+  })  : _workspaceRepository = workspaceRepository,
+        _fileRepository = fileRepository {
     saveNewWorkspace = Command0(_saveNewWorkspace);
     selectWorkspace = Command1((id) async {
       final result = await _selectWorkspace(id);
@@ -27,6 +33,14 @@ class VaultViewModel extends ChangeNotifier {
     });
     rollbackDirectoryNode = Command1((directoryNode) async {
       final result = await _rollbackDirectoryNode(directoryNode);
+      return result;
+    });
+    completeFile = Command1((fileNode) async {
+      final result = await _completeFile(fileNode);
+      return result;
+    });
+    uncompleteFile = Command1((fileNode) async {
+      final result = await _uncompleteFile(fileNode);
       return result;
     });
 
@@ -62,9 +76,51 @@ class VaultViewModel extends ChangeNotifier {
     }
   }
 
+  Future<Result<void>> _completeFile(FileNode file) async {
+    final result = await _fileRepository.upsertFile(FileNode(
+      id: file.id,
+      name: file.name,
+      path: file.path,
+      workspaceId: file.workspaceId,
+      points: 80,
+      completionDate: DateTime.now().toIso8601String(),
+    ));
+
+    switch (result) {
+      case Ok<FileNode>():
+        final result =
+            await _workspaceRepository.getWorkspace(file.workspaceId);
+        _pickWorkspace(result: result, clearAll: false);
+        return Result.ok(null);
+      case Error():
+        return result;
+    }
+  }
+
+  Future<Result<void>> _uncompleteFile(FileNode file) async {
+    final result = await _fileRepository.upsertFile(FileNode(
+      id: file.id,
+      name: file.name,
+      path: file.path,
+      workspaceId: file.workspaceId,
+      points: null,
+      completionDate: null,
+    ));
+
+    switch (result) {
+      case Ok<FileNode>():
+        final result =
+            await _workspaceRepository.getWorkspace(file.workspaceId);
+        _pickWorkspace(result: result, clearAll: false);
+        return Result.ok(null);
+      case Error():
+        return result;
+    }
+  }
+
   Future<Result<void>> _selectWorkspace(int id) async {
     final result = await _workspaceRepository.getWorkspace(id);
-    return _pickWorkspace(result);
+    return _pickWorkspace(result: result);
   }
 
   Future<Result<void>> _saveNewWorkspace() async {
@@ -83,7 +139,7 @@ class VaultViewModel extends ChangeNotifier {
     final result = await _workspaceRepository.saveWorkspace(workspace);
 
     _getWorkspaces();
-    return _pickWorkspace(result);
+    return _pickWorkspace(result: result);
   }
 
   Future<Result<void>> _rollbackDirectoryNode(
@@ -121,13 +177,20 @@ class VaultViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Result<void>> _pickWorkspace(Result<Workspace> result) async {
+  Future<Result<void>> _pickWorkspace(
+      {required Result<Workspace> result, bool clearAll = true}) async {
     try {
       switch (result) {
         case Ok<Workspace>():
-          _selectedDirectoryNode = null;
-          _directoryStack.clear();
           _workspace = result.value;
+
+          if (clearAll) {
+            _selectedDirectoryNode = null;
+            _directoryStack.clear();
+          } else {
+            _updateReferencesDirectoryStack(_workspace!.workspaceNode!);
+            _selectedDirectoryNode = _directoryStack.last;
+          }
           break;
         case Error():
           return result;
@@ -137,6 +200,24 @@ class VaultViewModel extends ChangeNotifier {
     } finally {
       notifyListeners();
     }
+  }
+
+  void _updateReferencesDirectoryStack(DirectoryNode directoryNode) {
+    List<DirectoryNode> newStack = [];
+
+    for (var d in _directoryStack) {
+      DirectoryNode childrenSelected;
+
+      childrenSelected = directoryNode.children
+              .firstWhere((a) => a.type == "directory" && a.name == d.name)
+          as DirectoryNode;
+
+      newStack.add(childrenSelected);
+      directoryNode = childrenSelected;
+    }
+
+    _directoryStack.clear();
+    _directoryStack.addAll(newStack);
   }
 
   Future<String?> _pickDirectory() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:media_vault/data/repositories/file.repository.dart';
 import 'package:media_vault/data/repositories/workspace.repository.dart';
 import 'package:media_vault/routing/router.dart';
 import 'package:media_vault/ui/@core/themes/theme.dart';
@@ -11,8 +12,11 @@ void main() {
   databaseFactory = databaseFactoryFfi;
   MediaKit.ensureInitialized();
   runApp(
-    Provider(
-      create: (context) => WorkspaceRepository(),
+    MultiProvider(
+      providers: [
+        Provider(create: (_) => WorkspaceRepository(FileRepository())),
+        Provider(create: (_) => FileRepository()),
+      ],
       child: const App(),
     ),
   );

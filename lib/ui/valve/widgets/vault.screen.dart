@@ -147,7 +147,8 @@ class _VaultScreenState extends State<VaultScreen> {
                               .map((child) {
                             if (child is FileNode) {
                               return ListTile(
-                                key: ValueKey(child.name),
+                                key: ValueKey(
+                                    child.path + (child.completionDate ?? "")),
                                 leading: Icon(
                                   Icons.play_circle_rounded,
                                   size: 40,
@@ -170,15 +171,27 @@ class _VaultScreenState extends State<VaultScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(15),
                                 ),
-                                trailing: (child.isChecked)
-                                    ? Icon(
-                                        Icons.task_alt_rounded,
-                                        size: 40,
-                                        color: AppColors.green1,
+                                trailing: (child.completionDate != null)
+                                    ? IconButton(
+                                        onPressed: () => {
+                                          widget.viewModel.uncompleteFile
+                                              .execute(child)
+                                        },
+                                        icon: Icon(
+                                          Icons.task_alt_rounded,
+                                          size: 40,
+                                          color: AppColors.green1,
+                                        ),
                                       )
-                                    : Icon(
-                                        Icons.radio_button_off_rounded,
-                                        size: 40,
+                                    : IconButton(
+                                        onPressed: () => {
+                                          widget.viewModel.completeFile
+                                              .execute(child)
+                                        },
+                                        icon: Icon(
+                                          Icons.radio_button_off_rounded,
+                                          size: 40,
+                                        ),
                                       ),
                               );
                             } else if (child is DirectoryNode) {
