@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:media_vault/domain/models/file-system-node.model.dart';
 import 'package:media_vault/domain/models/workspace.model.dart';
 import 'package:media_vault/ui/@core/themes/colors.dart';
-import 'package:media_vault/ui/valve/view_models/vault.viewmodel.dart';
-import 'package:media_vault/ui/valve/widgets/dialog-video.widget.dart';
+import 'package:media_vault/ui/vault/view_models/vault.viewmodel.dart';
+import 'package:media_vault/ui/vault/widgets/dialog-video.widget.dart';
 import 'package:popover/popover.dart';
 
 class VaultScreen extends StatefulWidget {
@@ -34,14 +34,13 @@ class _VaultScreenState extends State<VaultScreen> {
     );
   }
 
-  void showVideoModal(
-      BuildContext context, String videoName, String videoPath) {
+  void showVideoModal(BuildContext context, FileNode file) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return DialogVideoWidget(
-          title: videoName,
-          videoPath: videoPath,
+          title: file.name,
+          videoPath: file.path,
         );
       },
     );
@@ -88,30 +87,13 @@ class _VaultScreenState extends State<VaultScreen> {
           ),
         ),
       ),
-      body: Padding(
+      body: Container(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+        width: double.infinity,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 30,
           children: [
-            Container(
-              width: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                spacing: 10,
-                children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.grid_view_rounded,
-                      size: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: ListenableBuilder(
                   listenable: widget.viewModel,
@@ -167,7 +149,9 @@ class _VaultScreenState extends State<VaultScreen> {
                                 ),
                                 minTileHeight: 80,
                                 onTap: () => showVideoModal(
-                                    context, child.name, child.path),
+                                  context,
+                                  child,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(15),
                                 ),

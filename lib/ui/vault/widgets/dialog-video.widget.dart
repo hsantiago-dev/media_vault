@@ -3,8 +3,11 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 class DialogVideoWidget extends StatefulWidget {
-  const DialogVideoWidget(
-      {super.key, required this.title, required this.videoPath});
+  const DialogVideoWidget({
+    super.key,
+    required this.title,
+    required this.videoPath,
+  });
 
   final String title;
   final String videoPath;
@@ -48,33 +51,6 @@ class _DialogVideoWidgetState extends State<DialogVideoWidget> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Expanded(child: Video(controller: controller)),
-              SizedBox(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: Row(
-                      // spacing: 20,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 20),
-                          child: Icon(
-                            Icons.radio_button_off_rounded,
-                            size: 40,
-                          ),
-                        ),
-                        Text('Marcar como realizado'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
