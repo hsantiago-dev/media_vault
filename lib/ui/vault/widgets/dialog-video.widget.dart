@@ -17,15 +17,13 @@ class DialogVideoWidget extends StatefulWidget {
 }
 
 class _DialogVideoWidgetState extends State<DialogVideoWidget> {
-  // Create a [Player] to control playback.
-  late final player = Player(configuration: PlayerConfiguration(muted: true));
-  // Create a [VideoController] to handle video output from [Player].
+  late final player = Player(configuration: PlayerConfiguration());
   late final controller = VideoController(player);
+  double playbackSpeed = 1.0;
 
   @override
   void initState() {
     super.initState();
-    // Play a [Media] or [Playlist].
     player.open(Media(widget.videoPath));
   }
 
@@ -33,6 +31,23 @@ class _DialogVideoWidgetState extends State<DialogVideoWidget> {
   void dispose() {
     player.dispose();
     super.dispose();
+  }
+
+  void increaseSpeed() {
+    setState(() {
+      playbackSpeed += 0.25;
+      player.setRate(playbackSpeed);
+    });
+  }
+
+  void decreaseSpeed() {
+    setState(() {
+      playbackSpeed -= 0.25;
+      if (playbackSpeed < 0.25) {
+        playbackSpeed = 0.25;
+      }
+      player.setRate(playbackSpeed);
+    });
   }
 
   @override
@@ -51,6 +66,30 @@ class _DialogVideoWidgetState extends State<DialogVideoWidget> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Expanded(child: Video(controller: controller)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.fast_rewind),
+                    onPressed: decreaseSpeed,
+                    tooltip: 'Diminuir velocidade',
+                  ),
+                  Text(
+                    '${playbackSpeed}x',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.fast_forward),
+                    onPressed: increaseSpeed,
+                    tooltip: 'Aumentar velocidade',
+                  ),
+                ],
+              ),
             ],
           ),
         ),
