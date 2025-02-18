@@ -1,4 +1,5 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SqliteService {
   final String _databaseName = 'media_vault.db';
@@ -18,7 +19,7 @@ class SqliteService {
 
   Future<Database> _initDatabase() async {
     return await databaseFactoryFfi.openDatabase(
-      _databaseName,
+      await _getDatabasePath(),
       options: OpenDatabaseOptions(
         version: _databaseVersion,
         onCreate: _onCreate,
@@ -46,5 +47,10 @@ class SqliteService {
         CONSTRAINT idx_file_path UNIQUE (path)
       );
     ''');
+  }
+
+  Future<String> _getDatabasePath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return '${directory.path}/$_databaseName';
   }
 }

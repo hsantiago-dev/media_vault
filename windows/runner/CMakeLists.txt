@@ -16,6 +16,14 @@ add_executable(${BINARY_NAME} WIN32
   "runner.exe.manifest"
 )
 
+# Copia a sqlite3.dll para o diretório de saída
+add_custom_command(
+  TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  "${CMAKE_SOURCE_DIR}/runner/resources/sqlite3.dll"
+  "$<TARGET_FILE_DIR:${BINARY_NAME}>/sqlite3.dll"
+)
+
 # Apply the standard set of build settings. This can be removed for applications
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
