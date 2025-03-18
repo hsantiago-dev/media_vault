@@ -135,10 +135,8 @@ class _VaultScreenState extends State<VaultScreen> {
                                   Icons.play_circle_rounded,
                                   size: 40,
                                 ),
-                                titleTextStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                titleTextStyle:
+                                    Theme.of(context).textTheme.titleMedium,
                                 title: Text(child.name),
                                 subtitle: Text(
                                   child.path,
@@ -186,10 +184,8 @@ class _VaultScreenState extends State<VaultScreen> {
                                   size: 30,
                                   color: Colors.grey[600],
                                 ),
-                                titleTextStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                titleTextStyle:
+                                    Theme.of(context).textTheme.titleMedium,
                                 title: Text(child.name),
                                 minTileHeight: 80,
                                 onTap: () => widget
@@ -298,7 +294,10 @@ class PopoverWorkspace extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_rounded),
+                          Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                          ),
                           Text(
                             'Adicionar workspace',
                             style: TextStyle(
@@ -316,7 +315,10 @@ class PopoverWorkspace extends StatelessWidget {
                         'assets/planet.png',
                         width: 30,
                       ),
-                      title: Text(workspace.name),
+                      title: Text(
+                        workspace.name,
+                        style: TextStyle(color: Colors.white),
+                      ),
                       subtitle: Text(workspace.path),
                       subtitleTextStyle: TextStyle(
                         color: AppColors.grey3,
